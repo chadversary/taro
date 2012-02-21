@@ -50,6 +50,11 @@ help_text = tw.dedent("""\
             Start the search for the taro link in directory TARO_PATH rather
             than in the current directory.
 
+        TARO_SCRIPT
+            Use TARO_SCRIPT as the taro script. This implies that no search
+            occurs for the link file. For example,
+            `env TARO_SCRIPT=/bin/echo taro cheddar` resolves to `/bin/echo cheddar`.
+
     NOTES
         1. home page
            http://github.com/chadversary/taro.
@@ -120,16 +125,19 @@ def find_taro_script(leaf_dir):
     return find_taro_script(parent_dir)
 
 def main():
-    if "TARO_PATH" in os.environ:
-        taro_path = os.environ["TARO_PATH"]
-        taro_path = os.path.normpath(taro_path)
-        taro_path = os.path.expanduser(taro_path)
+    if "TARO_SCRIPT" in os.environ:
+        taro_script = os.environ["TARO_SCRIPT"]
     else:
-        taro_path = os.getcwd()
+        if "TARO_PATH" in os.environ:
+            taro_path = os.environ["TARO_PATH"]
+            taro_path = os.path.normpath(taro_path)
+            taro_path = os.path.expanduser(taro_path)
+        else:
+            taro_path = os.getcwd()
 
-    taro_script = find_taro_script(taro_path)
-    if taro_script is None:
-        fatal_error("failed to find taro link (path={0})".format(taro_path))
+        taro_script = find_taro_script(taro_path)
+        if taro_script is None:
+            fatal_error("failed to find taro link (path={0})".format(taro_path))
 
     os.execv(taro_script, sys.argv)
 
