@@ -25,6 +25,9 @@ taro script, the taro link is used as follows:
         [taro]
         script: /usr/local/bin/magic
 
+  If the `script` option is a relative path, then the path is relative to the
+  directory that contains the link file.
+
 An error occurs if the taro link exists but fails to satisfy either of the
 above conditions.
 
