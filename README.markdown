@@ -31,22 +31,6 @@ taro script, the taro link is used as follows:
 An error occurs if the taro link exists but fails to satisfy either of the
 above conditions.
 
-
-ENVIRONMENT VARIABLES
----------------------
-The environment variables below alter taro's behavior.
-
--   `TARO_PATH`
-
-     Start the search for the taro link in directory `TARO_PATH` rather
-     than in the current directory.
-
--   `TARO_SCRIPT`
-
-    Use `TARO_SCRIPT` as the taro script. This implies that no search occurs for
-    the link file. For example, `env TARO_SCRIPT=/bin/echo taro cheddar` resolves
-  to `/bin/echo cheddar`.
-
 NOTES
 -----
 - home page: http://github.com/chadversary/taro
