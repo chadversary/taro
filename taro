@@ -16,82 +16,67 @@
 
 import configparser
 import os
-import stat
 import sys
-import textwrap as tw
-
-link_names = [
-    ".taro",
-    "_taro",
-    "+taro",
-    ]
 
 def fatal_error(message):
-    print("taro: error: " + message)
-    sys.stdout.flush()
+    sys.stdout.write("taro: fatal: ")
+    sys.stdout.write(message)
+    sys.stdout.write("\n")
     sys.exit(1)
 
-def get_script_from_link(link_path):
-    assert(os.path.isabs(link_path))
+def find_taro_dir():
+    cur_dir = os.getcwd()
+    old_dir = None
 
-    if not os.path.exists(link_path):
-        return None
-    
-    mode = os.stat(link_path).st_mode
+    while cur_dir != '/' and cur_dir != old_dir:
+        taro_dir = os.path.join(cur_dir, ".taro")
+        if os.path.isdir(taro_dir):
+            assert(os.path.isabs(taro_dir))
+            return taro_dir
+        else:
+            old_dir = cur_dir
+            cur_dir = os.path.dirname(cur_dir)
 
-    is_readable = mode & stat.S_IRUSR
-    if not is_readable:
-        return None
+    fatal_error("not in a taro tree")
 
-    is_executable = mode & stat.S_IXUSR
-    if is_executable:
-        return link_path
+def find_taro_script(taro_dir):
+    assert(os.path.isabs(taro_dir))
 
-    # Assume that the link file is a Microsoft-style ini file.
+    config_filepath = os.path.join(taro_dir, "config")
     config = configparser.ConfigParser()
 
     try:
-        config.read(link_path)
-    except configparser.ParserError as error:
-        fatal_error("failed to parse file '{0}': {1}".format(error))
+        config.read(config_filepath)
+    except configparser.ConfigParser as error:
+        fatal_error("failed to parse file {0!r} ({1})"\
+                    .format(config_filepath, error))
 
-    if not config.has_option("taro", "script"):
-        fatal_error("config file '{0}' does not contain option 'taro:script'".format(link_path))
+    if not config.has_option("taro", "main"):
+        fatal_error("config file {0!r} lacks option taro.main")
 
-    script_path = config["taro"]["script"]
+    taro_script = config["taro"]["main"]
+    if not taro_script.startswith("/"):
+        taro_root_dir = os.path.dirname(taro_dir)
+        taro_script = os.path.join(taro_root_dir, taro_script)
 
-    if not os.path.isabs(script_path):
-        link_dir = os.path.dirname(link_path)
-        assert(os.path.isabs(link_dir))
-        script_path = os.path.join(link_dir, script_path)
-        script_path = os.path.normpath(script_path)
+    return taro_script
 
-    return script_path
+def main(args):
+    taro_dir = find_taro_dir()
+    taro_script = find_taro_script(taro_dir)
+    real_args = [
+        taro_script,
+        "--taro-dir=" + taro_dir,
+        "--",
+        ]
+    real_args.extend(args)
 
-    
-def find_taro_script(leaf_dir):
-    path = os.path
+    try:
+        os.execv(real_args[0], real_args)
+    except OSError as error:
+        fatal_error("failed to execute {0!r}: {1}".format(taro_script, error))
 
-    assert(path.isabs(leaf_dir))
+if __name__ == '__main__':
+    main(sys.argv[1:])
 
-    for name in link_names:
-        link_path = path.join(leaf_dir, name)
-        taro_script = get_script_from_link(link_path)
-        if taro_script is not None:
-            return taro_script
-
-    if leaf_dir == "/":
-        return None
-
-    parent_dir = path.normpath(path.join(leaf_dir, os.pardir))
-    return find_taro_script(parent_dir)
-
-def main():
-    taro_script = find_taro_script(os.getcwd())
-    if taro_script is None:
-        fatal_error("failed to find taro link")
-
-    os.execv(taro_script, sys.argv)
-
-if __name__ == "__main__":
-    main()
+# vim:ft=python:
