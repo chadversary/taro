@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import configparser
 import os
 import sys
@@ -61,15 +62,32 @@ def find_taro_script(taro_dir):
 
     return taro_script
 
+def parse_args(args):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--taro-dir", type=str)
+    parser.add_argument("dispatch_args", metavar="command list [required]", nargs=argparse.REMAINDER)
+
+    parsed_args =  parser.parse_args(args)
+    if len(parsed_args.dispatch_args) == 0:
+        parser.error("command list is empty")
+
+    return parsed_args
+
 def main(args):
-    taro_dir = find_taro_dir()
+    pargs = parse_args(args)
+
+    if pargs.taro_dir is not None:
+        taro_dir = os.path.abspath(pargs.taro_dir)
+    else:
+        taro_dir = find_taro_dir()
+
     taro_script = find_taro_script(taro_dir)
     real_args = [
         taro_script,
         "--taro-dir=" + taro_dir,
         "--",
         ]
-    real_args.extend(args)
+    real_args.extend(pargs.dispatch_args)
 
     try:
         os.execv(real_args[0], real_args)
