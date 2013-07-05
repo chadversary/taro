@@ -52,7 +52,7 @@ def find_taro_script(taro_dir):
                     .format(config_filepath, error))
 
     if not config.has_option("taro", "main"):
-        fatal_error("config file {0!r} lacks option taro.main")
+        fatal_error("config file {0!r} lacks option taro.main".format(config_filepath))
 
     taro_script = config["taro"]["main"]
     if not taro_script.startswith("/"):
